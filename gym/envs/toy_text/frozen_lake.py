@@ -83,22 +83,19 @@ class FrozenLakeEnv(discrete.DiscreteEnv):
         FHFH
         FFFH
         HFFG
-
     S : starting point, safe
     F : frozen surface, safe
     H : hole, fall to your doom
     G : goal, where the frisbee is located
-
     The episode ends when you reach the goal or fall in a hole.
     You receive a reward of 1 if you reach the goal, and zero otherwise.
-
     """
 
     metadata = {'render.modes': ['human', 'ansi']}
 
-    def __init__(self, desc=None, map_name="4x4",is_slippery=True):
+    def __init__(self, desc=None, map_name="4x4", map_size=4, is_slippery=True):
         if desc is None and map_name is None:
-            desc = generate_random_map()
+            desc = generate_random_map(size=map_size)
         elif desc is None:
             desc = MAPS[map_name]
         self.desc = desc = np.asarray(desc,dtype='c')
@@ -107,25 +104,26 @@ class FrozenLakeEnv(discrete.DiscreteEnv):
 
         nA = 4
         nS = nrow * ncol
+        reward = 0
 
         isd = np.array(desc == b'S').astype('float64').ravel()
         isd /= isd.sum()
 
-        P = {s : {a : [] for a in range(nA)} for s in range(nS)}
+        P = {s: {a: [] for a in range(nA)} for s in range(nS)}
 
-        def to_s(row, col):
-            return row*ncol + col
+        def to_s(row_, col_):
+            return row_ * ncol + col_
 
-        def inc(row, col, a):
+        def inc(row_, col_, a):
             if a == LEFT:
-                col = max(col-1,0)
+                col_ = max(col_-1,0)
             elif a == DOWN:
-                row = min(row+1,nrow-1)
+                row_ = min(row_+1,nrow-1)
             elif a == RIGHT:
-                col = min(col+1,ncol-1)
+                col_ = min(col_+1,ncol-1)
             elif a == UP:
-                row = max(row-1,0)
-            return (row, col)
+                row_ = max(row_-1,0)
+            return row_, col_
 
         for row in range(nrow):
             for col in range(ncol):
@@ -142,16 +140,18 @@ class FrozenLakeEnv(discrete.DiscreteEnv):
                                 newstate = to_s(newrow, newcol)
                                 newletter = desc[newrow, newcol]
                                 done = bytes(newletter) in b'GH'
-                                rew = float(newletter == b'G')
-                                li.append((1.0/3.0, newstate, rew, done))
+                                reward = float(newletter == b'G')
+                                li.append((1.0/3.0, newstate, reward, done))
                         else:
                             newrow, newcol = inc(row, col, a)
                             newstate = to_s(newrow, newcol)
                             newletter = desc[newrow, newcol]
                             done = bytes(newletter) in b'GH'
-                            rew = float(newletter == b'G')
-                            li.append((1.0, newstate, rew, done))
+                            reward = float(newletter == b'G')
+                            li.append((1.0, newstate, reward, done))
 
+        self.P = P
+        self.reward = reward
         super(FrozenLakeEnv, self).__init__(nS, nA, P, isd)
 
     def render(self, mode='human'):
@@ -162,7 +162,7 @@ class FrozenLakeEnv(discrete.DiscreteEnv):
         desc = [[c.decode('utf-8') for c in line] for line in desc]
         desc[row][col] = utils.colorize(desc[row][col], "red", highlight=True)
         if self.lastaction is not None:
-            outfile.write("  ({})\n".format(["Left","Down","Right","Up"][self.lastaction]))
+            outfile.write("  ({})\n".format(["Left", "Down", "Right", "Up"][self.lastaction]))
         else:
             outfile.write("\n")
         outfile.write("\n".join(''.join(line) for line in desc)+"\n")
