@@ -157,6 +157,11 @@ class FrozenLakeEnv(discrete.DiscreteEnv):
                             newletter = desc[newrow, newcol]
                             done = bytes(newletter) in b'GH'
                             reward = float(newletter == b'G')
+                            if self.set_custom_rewards:
+                                if newletter in b'FS':
+                                    reward = self.step_reward
+                                elif newletter == b'H':
+                                    reward = self.hole_reward
                             li.append((1.0, newstate, reward, done))
 
         self.P = P
