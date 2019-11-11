@@ -93,7 +93,8 @@ class FrozenLakeEnv(discrete.DiscreteEnv):
 
     metadata = {'render.modes': ['human', 'ansi']}
 
-    def __init__(self, desc=None, map_name="4x4", map_size=4, is_slippery=True):
+    def __init__(self, desc=None, map_name="4x4", map_size=4,
+                 set_custom_rewards=False, step_reward=-0.01, hole_reward=-1, is_slippery=True):
         if desc is None and map_name is None:
             desc = generate_random_map(size=map_size)
         elif desc is None:
@@ -101,6 +102,9 @@ class FrozenLakeEnv(discrete.DiscreteEnv):
         self.desc = desc = np.asarray(desc,dtype='c')
         self.nrow, self.ncol = nrow, ncol = desc.shape
         self.reward_range = (0, 1)
+        self.step_reward = step_reward
+        self.hole_reward = hole_reward
+        self.set_custom_rewards = set_custom_rewards
 
         nA = 4
         nS = nrow * ncol
@@ -141,6 +145,11 @@ class FrozenLakeEnv(discrete.DiscreteEnv):
                                 newletter = desc[newrow, newcol]
                                 done = bytes(newletter) in b'GH'
                                 reward = float(newletter == b'G')
+                                if self.set_custom_rewards:
+                                    if newletter in b'FS':
+                                        rew = self.step_reward
+                                    elif newletter == b'H':
+                                        rew = self.hole_reward
                                 li.append((1.0/3.0, newstate, reward, done))
                         else:
                             newrow, newcol = inc(row, col, a)
