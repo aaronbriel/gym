@@ -147,9 +147,9 @@ class FrozenLakeEnv(discrete.DiscreteEnv):
                                 reward = float(newletter == b'G')
                                 if self.set_custom_rewards:
                                     if newletter in b'FS':
-                                        rew = self.step_reward
+                                        reward = self.step_reward
                                     elif newletter == b'H':
-                                        rew = self.hole_reward
+                                        reward = self.hole_reward
                                 li.append((1.0/3.0, newstate, reward, done))
                         else:
                             newrow, newcol = inc(row, col, a)
