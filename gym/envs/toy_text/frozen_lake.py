@@ -94,7 +94,7 @@ class FrozenLakeEnv(discrete.DiscreteEnv):
     metadata = {'render.modes': ['human', 'ansi']}
 
     def __init__(self, desc=None, map_name="4x4", map_size=4,
-                 set_custom_rewards=False, step_reward=-0.01, hole_reward=-1, is_slippery=True):
+                 set_custom_rewards=False, step_reward=-0.01, hole_reward=-10, is_slippery=True):
         if desc is None and map_name is None:
             desc = generate_random_map(size=map_size)
         elif desc is None:
